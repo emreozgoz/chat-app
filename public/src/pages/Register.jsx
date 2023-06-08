@@ -1,14 +1,63 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Logo from "../assets/logo.svg";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { registerRoute } from "../utils/APIRoutes";
 function Register() {
-  const handleSubmit = (event) => {
+  const navigate = useNavigate();
+  const [values, setValues] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const toastOptions = {
+    position: "bottom-right",
+    autoClose: 8000,
+    pauseOnHover: true,
+    draggable: true,
+    theme: "dark",
+  };
+  const handleValidation = () => {
+    const { password, confirmPassword, username, email } = values;
+    if (password !== confirmPassword) {
+      toast("Passwords don't match", toastOptions);
+      return false;
+    } else if (username.length < 3) {
+      toast("Username must be atleast 3 characters long", toastOptions);
+      return false;
+    } else if (password.length < 8) {
+      toast("Password must be atleast 8 characters long", toastOptions);
+      return false;
+    } else if (email === "") {
+      toast("Email is required", toastOptions);
+      return false;
+    }
+    return true;
+  };
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    alert("form");
+    if (handleValidation()) {
+      const { password, username, email } = values;
+      const { data } = await axios.post(registerRoute, {
+        username,
+        email,
+        password,
+      });
+      if (data.status === false) {
+        toast(data.message, toastOptions);
+      }
+      if (data.status === true) {
+        localStorage.setItem("chat-app-user", JSON.stringify(data.user));
+        navigate("/");
+      }
+    }
   };
   const handleChange = (event) => {
-    console.log(event.target.value);
+    setValues({ ...values, [event.target.name]: event.target.value });
   };
   return (
     <>
@@ -48,6 +97,7 @@ function Register() {
           </span>
         </form>
       </FormContainer>
+      <ToastContainer />
     </>
   );
 }
